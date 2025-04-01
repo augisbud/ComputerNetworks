@@ -1,4 +1,4 @@
-client*
-server*
-!client.c
-!server.c
+Client-Server/client*
+Client-Server/server*
+!Client-Server/client.c
+!Client-Server/server.c
