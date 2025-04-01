@@ -1,0 +1,4 @@
+client*
+server*
+!client.c
+!server.c
