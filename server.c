@@ -44,30 +44,27 @@ void reverse_string(const char *string, char *result)
     result[len] = '\0';
 }
 
-void process_http_request(const char *request, char *response)
+int parse_http_request(const char *request, char *body)
 {
-    // Find the request body (after double newline)
     const char *body_start = strstr(request, "\r\n\r\n");
-    char input[BUFFLEN] = {0};
-    
     if (body_start != NULL)
     {
         body_start += 4; // Skip past the double newline
-        strncpy(input, body_start, BUFFLEN - 1);
+        strncpy(body, body_start, BUFFLEN - 1);
+        return 1;
     }
-    
-    char reversed[BUFFLEN];
-    reverse_string(input, reversed);
-    
-    // Build HTTP response
+    return 0;
+}
+
+void build_http_response(const char *body, char *response)
+{
     snprintf(response, BUFFLEN * 2,
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: application/json\r\n"
         "Content-Length: %ld\r\n"
-        "Connection: close\r\n"
         "\r\n"
         "%s",
-        strlen(reversed), reversed);
+        strlen(body), body);
 }
 
 int main(int argc, char *argv[])
@@ -166,16 +163,27 @@ int main(int argc, char *argv[])
                     buffer[r_len] = '\0';
                     printf("Received HTTP request:\n%s\n", buffer);
                     
-                    char http_response[BUFFLEN * 2];
-                    process_http_request(buffer, http_response);
-                    
-                    printf("Sending HTTP response...\n");
-                    send(c_sockets[i], http_response, strlen(http_response), 0);
-                    
-                    // Close connection after sending response (Connection: close)
-                    close(c_sockets[i]);
-                    c_sockets[i] = -1;
-                    printf("User disconnected after response. Users connected: %d\n", count_active_clients(c_sockets));
+                    char body[BUFFLEN];
+                    if (parse_http_request(buffer, body))
+                    {
+                        char reversed[BUFFLEN];
+                        reverse_string(body, reversed);
+                        
+                        char http_response[BUFFLEN * 2];
+                        build_http_response(reversed, http_response);
+                        
+                        printf("Sending HTTP response...\n");
+                        send(c_sockets[i], http_response, strlen(http_response), 0);
+                    }
+                    else
+                    {
+                        char http_response[BUFFLEN];
+                        snprintf(http_response, sizeof(http_response),
+                            "HTTP/1.1 400 Bad Request\r\n"
+                            "Content-Length: 0\r\n"
+                            "\r\n");
+                        send(c_sockets[i], http_response, strlen(http_response), 0);
+                    }
                 }
             }
         }
