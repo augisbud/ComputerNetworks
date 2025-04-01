@@ -49,7 +49,7 @@ int parse_http_request(const char *request, char *body)
     const char *body_start = strstr(request, "\r\n\r\n");
     if (body_start != NULL)
     {
-        body_start += 4; // Skip past the double newline
+        body_start += 4;
         strncpy(body, body_start, BUFFLEN - 1);
         return 1;
     }
@@ -60,7 +60,7 @@ void build_http_response(const char *body, char *response)
 {
     snprintf(response, BUFFLEN * 2,
         "HTTP/1.1 200 OK\r\n"
-        "Content-Type: application/json\r\n"
+        "Content-Type: text/plain\r\n"
         "Content-Length: %ld\r\n"
         "\r\n"
         "%s",

@@ -63,14 +63,13 @@ int main(int argc, char *argv[])
             printf("ERROR: Empty input.\n");
             continue;
         }
-        
-        // Build HTTP request with keep-alive
+
         char http_request[BUFFLEN * 2];
         snprintf(http_request, sizeof(http_request),
             "POST / HTTP/1.1\r\n"
             "Host: %s:%d\r\n"
-            "User-Agent: HTTPie\r\n"
-            "Content-Type: application/json\r\n"
+            "User-Agent: client-c\r\n"
+            "Content-Type: text/plain\r\n"
             "Content-Length: %ld\r\n"
             "\r\n"
             "%s",
@@ -82,15 +81,12 @@ int main(int argc, char *argv[])
         int total_received = 0;
         int bytes_received;
         
-        // Read complete HTTP response
         while ((bytes_received = recv(s_socket, recvbuffer + total_received, 
                                      sizeof(recvbuffer) - total_received - 1, 0)) > 0)
         {
             total_received += bytes_received;
-            // Check if we've received the full response (ends with double newline)
             if (strstr(recvbuffer, "\r\n\r\n") != NULL)
             {
-                // Check Content-Length to ensure we have the full body
                 char *content_length = strstr(recvbuffer, "Content-Length: ");
                 if (content_length)
                 {
@@ -109,11 +105,10 @@ int main(int argc, char *argv[])
             }
         }
         
-        // Find the start of the response body
         char *body_start = strstr(recvbuffer, "\r\n\r\n");
         if (body_start != NULL)
         {
-            body_start += 4; // Skip past the double newline
+            body_start += 4;
             printf("Reversed string: %s\n", body_start);
         }
         else
